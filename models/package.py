@@ -61,6 +61,7 @@ def stability(Package, version):
 def mask(Package, version):
     return portage.getmaskingstatus(
         "%s/%s-%s" % (Package.category, Package.package, version),
+        myrepo=Package.repository
     )
 
 
