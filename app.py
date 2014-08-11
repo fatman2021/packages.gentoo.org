@@ -2,9 +2,14 @@
 # -*- coding: utf-8 -*-
 
 import bottle
-from plugins import csp, xhtml
+from plugins import CSP, XHTML
 from models.collections import Trees, Overlays, Repository, Category, Package
 import models.package as pkg
+
+CONFIG = bottle.default_app().config
+CONFIG.load_config('config.ini')
+
+bottle.install(CSP.Plugin())
 
 bottle.debug(True)
 
@@ -47,10 +52,21 @@ def list_of_packages(repository, category):
 @bottle.route("/<repository>/<category:re:[\w+][\w+.-]*>/<package:re:[\w+][\w+.-]*>")
 @bottle.view("list_of_versions")
 def list_of_versions(repository, category, package):
+    if repository not in Trees.repositories():
+        bottle.abort(404, "Not found")
+
+    if category not in Repository(repository).categories():
+        bottle.abort(404, "Not found")
+
+    if package not in Category(repository, category).packages():
+        bottle.abort(404, "Not found")
+
     return dict(
         Overlays=Overlays,
         Package=Package(repository, category, package),
         pkg=pkg,
+        cookies=bottle.request.cookies,
+        CONFIG=CONFIG,
     )
 
 
@@ -60,22 +76,3 @@ def error404(error):
     return dict(
         Overlays=Overlays,
     )
-
-
-# Legacy URL redirects
-
-
-@bottle.route("/package/<category:re:[\w+][\w+.-]*>/<packagere:[\w+][\w+.-]*>")
-def legacy_list_of_versions(category, package):
-    bottle.redirect("/%s/%s/%s" % (Overlays.DEFAULT, category, parkage))
-
-
-@bottle.route("/categories")
-def legacy_list_of_categories():
-    bottle.redirect("/%s" % Overlays.DEFAULT)
-
-
-# TODO: determine why this redirect isn't working
-@bottle.route("/category/<category:re:[\w+][\w+.-]*>")
-def legacy_list_of_packages(category):
-    bottle.redirect("/%s/%s" % (Overlays.DEFAULT, category))

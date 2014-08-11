@@ -14,27 +14,18 @@
 			<p>{{Package.package_description()}}</p>
 
 
-			% for reason in pkg.mask(Package, Package.package_newest_version()):
-			%     if reason.endswith("license(s)"):
-			<div class="alert alert-info" role="alert">This package requires acceptance of the {{reason}}</div>
-			%     end
-			% end
-
-
-			% try:
-			%     recent_change = pkg.recent_changes(Package)
-			<!-- <h2>Most recent change</h2> -->
+			% recent_change = pkg.recent_changes(Package)
+			% if recent_change:
+			<h2>Most recent change</h2>
 			<div class="well">
-			% for line in recent_change:
+			%     for line in recent_change:
 				{{line}}<br />
-			% end
+			%     end
 			</div>
-			% except FileNotFoundError:
-			%    pass
 			% end
 
 
-			<!-- <h2>Arch keywords</h2> -->
+			<h2>Keywords</h2>
 			<table class="table table-striped">
 			<thead>
 				<tr>
@@ -44,49 +35,72 @@
 					% end
 				</tr>
 				% for version in Package.versions():
+				% include('version_row.tpl')
+				% end
+			</thead>
+			</table>
+
+			% if 'app.use_flags' in CONFIG:
+			<h2>Use flags</h2>
+			<table class="table table-striped">
+			<thead>
 				<tr>
-					<td>{{version}}</td>
-					% masks = pkg.mask(Package, version)
-					% if "missing keyword" in masks:
-					%     if "9999" in version:
-					<td colspan="{{len(pkg.arch_list())}}" class="text-center alert alert-info">Live ebuild</td>
-					%     end
-					% elif "package.mask" in masks:
-					<td colspan="{{len(pkg.arch_list())}}" class="text-center alert alert-danger">Version is hardmasked</td>
+					<th>Use flag</th>
+					<th>Description</th>
+				</tr>
+				% default_use = pkg.default_use(Package)
+				% for use_flag in pkg.use(Package):
+				<tr>
+					% if use_flag[0] in default_use:
+					<td><span class="fa fa-check-circle-o"></span> {{use_flag[0]}}</td>
 					% else:
-					%     try:
-					%         for stability in pkg.stability(Package, version):
-					%             if stability == "+":
-					<td class="text-center alert-success">{{stability}}</td>
-					%             elif stability == "~":
-					<td class="text-center alert-warning">{{stability}}</td>
-					%             elif stability == "-":
-					<td class="text-center alert-danger">{{stability}}</td>
-					%             else:
-					<td></td>
-					%             end
-					%         end
-					%     except KeyError as e:
-					<td colspan="{{len(pkg.arch_list())}}" class="text-center alert alert-danger"><strong>Error:</strong> The ebuild for {{str(e)}} is broken</td>
-					%     end
+					<td><span class="fa fa-circle-o"></span> {{use_flag[0]}}</td>
 					% end
+					<td>{{use_flag[1]}}</td>
 				</tr>
 				% end
 			</thead>
 			</table>
+			% end
 		</div>
 
 		<div class="col-lg-3">
-			<h3>Project Homepage</h3>
+			<h3>Project links</h3>
 			<ul class="list-group">
+			% upstream = pkg.upstream(Package)
 			% homepages = pkg.homepage(Package)
 			% for source in homepages:
-				<li role="presentation" class="list-group-item"><a href="{{homepages[source]}}">{{source}}</a></li>
+				<li role="presentation" class="list-group-item"><span class="fa fa-home"></span> <a href="{{homepages[source]}}">{{source}}</a></li>
+			% end
+			% if upstream:
+			%     for source in upstream.bugtrackers:
+				<li role="presentation" class="list-group-item"><span class="fa fa-bug"></span> <a href="{{source}}">Bug tracker</a></li>
+			%     end
+			%     for source in upstream.docs:
+				<li role="presentation" class="list-group-item"><span class="fa fa-info-circle"></span> <a href="{{source}}">Documentation</a></li>
+			%     end
+			%     for source in upstream.changelogs:
+				<li role="presentation" class="list-group-item"><span class="fa fa-file-text-o"></span> <a href="{{source}}">Changelog</a></li>
+			%     end
 			% end
 			</ul>
 
 
-			<div class="dropdown pull-right">
+			<h3>Gentoo links</h3>
+			<ul class="list-group">
+				<li role="presentation" class="list-group-item"><span class="fa fa-bug"></span>  <a href="https://bugs.gentoo.org/buglist.cgi?quicksearch={{Package.category}}%2F{{Package.package}}">Bug tracker</a></li>
+				<li role="presentation" class="list-group-item"><span class="fa fa-file-text-o"></span> <a href="http://sources.gentoo.org/viewcvs.py/gentoo-x86/{{Package.category}}/{{Package.package}}/ChangeLog?view=markup">Changelog</a></li>
+
+			</ul>
+
+
+<!-- 			<h3>Keywords legend</h3>
+			<div class="list-group">
+				<a class="list-group-item list-group-item-success">Verified stable</a>
+				<a class="list-group-item list-group-item-warning">Testing incomplete</a>
+			</div> -->
+
+			<div class="dropdown">
 				<button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown">
 				Select Arches
 				<span class="caret"></span>
@@ -97,19 +111,6 @@
 				<li role="presentation"><a role="menuitem" tabindex="-1" href="#">FreeBSD</a></li>
 				</ul>
 			</div>
-
-
-			<ul class="list-group">
-				<li role="presentation" class="list-group-item"><a href="https://bugs.gentoo.org/buglist.cgi?quicksearch={{Package.category}}%2F{{Package.package}}">Gentoo Bugs</a></li>
-			</ul>
-
-
-			<h3>Keywords legend</h3>
-			<div class="list-group">
-				<a class="list-group-item list-group-item-success">Verified stable</a>
-				<a class="list-group-item list-group-item-warning">Testing incomplete</a>
-			</div>
-
 		</div>
 	</div>
 </div>

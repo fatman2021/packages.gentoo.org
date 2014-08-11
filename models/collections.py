@@ -2,7 +2,10 @@ import portage
 import os
 import xml.etree.ElementTree
 
-PORTTREE = portage.db[portage.root]["porttree"].dbapi
+# local_config=False tells this to ignore all changes in /etc/portage
+SETTINGS = portage.config(local_config=False)
+
+PORTTREE = portage.portagetree(settings=SETTINGS).dbapi
 
 
 class Trees:
@@ -36,8 +39,7 @@ class Repository(Trees):
     def categories(self):
         CATEGORIES = os.path.join(PORTTREE.getRepositoryPath(self.repository), 'profiles/categories')
         if os.path.isfile(CATEGORIES):
-            with open(CATEGORIES) as fh:
-                return [c.rstrip() for c in fh.readlines()]
+            return portage.util.grabfile(CATEGORIES)
 
         # PORTTREE.categories says it's set set when PORTTREE.cp_all() is called by anything
         # so instead of using it, we just call cp_all() and filter that way
